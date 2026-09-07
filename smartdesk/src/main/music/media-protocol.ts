@@ -6,14 +6,30 @@ import { extname } from 'node:path'
 // 避免渲染进程直接持有文件系统路径权限。
 
 const SCHEME = 'media'
-const ALLOWED_EXTENSIONS = new Set(['.mp3', '.flac', '.wav', '.ogg', '.m4a'])
+const ALLOWED_EXTENSIONS = new Set([
+  '.mp3',
+  '.flac',
+  '.wav',
+  '.ogg',
+  '.m4a',
+  '.jpg',
+  '.jpeg',
+  '.png',
+  '.webp',
+  '.bmp'
+])
 
 const MIME: Record<string, string> = {
   '.mp3': 'audio/mpeg',
   '.flac': 'audio/flac',
   '.wav': 'audio/wav',
   '.ogg': 'audio/ogg',
-  '.m4a': 'audio/mp4'
+  '.m4a': 'audio/mp4',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.png': 'image/png',
+  '.webp': 'image/webp',
+  '.bmp': 'image/bmp'
 }
 
 export function registerMediaProtocol(): void {

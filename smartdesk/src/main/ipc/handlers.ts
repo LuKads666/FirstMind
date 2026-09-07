@@ -21,6 +21,12 @@ import { hideAlertWindow } from '../alert-window'
 import { evaluateOnce, triggerDemoRisk } from '../engine/scheduler'
 import { chooseLibraryFolder, scanLibrary } from '../music/music-library'
 import { chatHistory, handleChat } from '../agent/agent-service'
+import { importScheduleFile } from '../importers/import-service'
+import {
+  chooseWallpaperImage,
+  getWallpaper,
+  setWallpaperTheme
+} from '../wallpaper-manager'
 
 // 类型化 IPC 注册中心（设计文档 19）：渲染层不直接访问数据库与 Win32。
 
@@ -96,6 +102,14 @@ export function registerIpcHandlers(): void {
   })
 
   ipcMain.handle(IpcChannels.ChatHistory, () => chatHistory())
+
+  ipcMain.handle(IpcChannels.ImportFile, () => importScheduleFile())
+
+  ipcMain.handle(IpcChannels.WallpaperGet, () => getWallpaper())
+
+  ipcMain.handle(IpcChannels.WallpaperSetTheme, (_event, id: string) => setWallpaperTheme(id))
+
+  ipcMain.handle(IpcChannels.WallpaperChooseImage, () => chooseWallpaperImage())
 }
 
 function buildStatusSnapshot(): StatusSnapshot {

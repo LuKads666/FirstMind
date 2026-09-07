@@ -37,6 +37,13 @@ contextBridge.exposeInMainWorld('desktop', {
   chatHistory: (): Promise<Array<{ role: string; content: string; created_at: string }>> =>
     ipcRenderer.invoke(IpcChannels.ChatHistory),
 
+  importFile: (): Promise<unknown> => ipcRenderer.invoke(IpcChannels.ImportFile),
+  wallpaperGet: (): Promise<unknown> => ipcRenderer.invoke(IpcChannels.WallpaperGet),
+  wallpaperSetTheme: (id: string): Promise<unknown> =>
+    ipcRenderer.invoke(IpcChannels.WallpaperSetTheme, id),
+  wallpaperChooseImage: (): Promise<unknown> =>
+    ipcRenderer.invoke(IpcChannels.WallpaperChooseImage),
+
   onRiskShow: (cb: (payload: unknown) => void): (() => void) => subscribe('risk:show', cb),
   onRiskRaised: (cb: (payload: unknown) => void): (() => void) => subscribe('risk:raised', cb)
 })

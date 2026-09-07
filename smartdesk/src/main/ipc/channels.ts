@@ -21,7 +21,11 @@ export const IpcChannels = {
   MusicChooseFolder: 'music:chooseFolder',
   MusicList: 'music:list',
   ChatSend: 'chat:send',
-  ChatHistory: 'chat:history'
+  ChatHistory: 'chat:history',
+  ImportFile: 'import:file',
+  WallpaperGet: 'wallpaper:get',
+  WallpaperSetTheme: 'wallpaper:setTheme',
+  WallpaperChooseImage: 'wallpaper:chooseImage'
 } as const
 
 export const ChatSendSchema = z.object({

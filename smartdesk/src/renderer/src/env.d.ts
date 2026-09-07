@@ -90,6 +90,10 @@ interface Window {
     musicUrl: (path: string) => string
     chatSend: (text: string) => Promise<{ reply: string; source: string }>
     chatHistory: () => Promise<Array<{ role: string; content: string; created_at: string }>>
+    importFile: () => Promise<{ imported: number; tasksCreated: number; warnings: string[] } | null>
+    wallpaperGet: () => Promise<{ type: 'theme' | 'image'; id?: string; path?: string }>
+    wallpaperSetTheme: (id: string) => Promise<unknown>
+    wallpaperChooseImage: () => Promise<{ type: 'image'; path: string } | null>
     onRiskShow: (cb: (payload: unknown) => void) => () => void
     onRiskRaised: (cb: (payload: unknown) => void) => () => void
   }

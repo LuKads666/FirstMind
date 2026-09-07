@@ -7,6 +7,7 @@ import FocusCard from './components/FocusCard'
 import MusicBar from './components/MusicBar'
 import ScheduleTimeline from './components/ScheduleTimeline'
 import TodayCard from './components/TodayCard'
+import WallpaperPicker, { THEME_CSS, useWallpaper } from './components/WallpaperPicker'
 import { type TaskItem } from './data/mock'
 import { dueText } from './data/real'
 
@@ -33,6 +34,7 @@ function rowToItem(row: TaskRow): TaskItem {
 
 function DesktopScreen(): React.JSX.Element {
   const [tasks, setTasks] = useState<TaskItem[]>([])
+  const { wallpaper } = useWallpaper()
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent): void => {
@@ -94,14 +96,32 @@ function DesktopScreen(): React.JSX.Element {
 
   return (
     <div className="desktop">
-      <img
-        className="wallpaper"
-        src="/wallpaper/default.jpg"
-        alt=""
-        draggable={false}
-      />
+      {wallpaper.type === 'image' && wallpaper.path ? (
+        <img
+          className="wallpaper"
+          src={window.desktop.musicUrl(wallpaper.path)}
+          alt=""
+          draggable={false}
+        />
+      ) : (
+        <div
+          className="wallpaper wallpaper-theme"
+          style={{ backgroundImage: THEME_CSS[wallpaper.id ?? 'aurora'] ?? THEME_CSS.aurora }}
+        />
+      )}
       <div className="wallpaper-veil" />
       <div className="drag-handle" />
+      <div className="top-left-tools">
+        <WallpaperPicker />
+        <button
+          className="import-btn"
+          type="button"
+          aria-label="导入课程表或作业"
+          onClick={() => void window.desktop.importFile()}
+        >
+          导入日程
+        </button>
+      </div>
 
       <div className="right-stack">
         <TodayCard

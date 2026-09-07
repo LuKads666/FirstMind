@@ -1103,3 +1103,66 @@ button {
   background: rgba(255, 255, 255, 0.08);
   color: rgba(238, 246, 244, 0.85);
 }
+
+/* ── 壁纸主题层与选择器 ── */
+.wallpaper-theme {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.top-left-tools {
+  position: absolute;
+  top: 18px;
+  left: 22px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 30;
+}
+
+.wallpaper-picker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(15, 22, 26, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(14px);
+}
+
+.wallpaper-dot {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.75);
+  background: rgba(255, 255, 255, 0.12);
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.wallpaper-dot:hover { transform: scale(1.12); }
+
+.wallpaper-dot.is-active { border-color: #3fae79; }
+
+.import-btn {
+  border: none;
+  border-radius: 999px;
+  padding: 9px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(238, 246, 244, 0.85);
+  background: rgba(15, 22, 26, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(14px);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.import-btn:hover { background: rgba(47, 138, 128, 0.5); }
