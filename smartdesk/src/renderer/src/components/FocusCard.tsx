@@ -1,6 +1,7 @@
 import { Coffee, Pause, Play, RotateCcw } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import { mockFocusLabel, mockFocusMinutes } from '../data/mock'
+import { mockFocusLabel } from '../data/mock'
+import { activityLabel } from '../data/real'
 
 interface FocusCardProps {
   taskLabel?: string
@@ -13,11 +14,27 @@ function formatTime(totalSeconds: number): string {
 }
 
 function FocusCard({ taskLabel = mockFocusLabel }: FocusCardProps): React.JSX.Element {
-  const totalSeconds = mockFocusMinutes * 60
+  const totalSeconds = 25 * 60
   const [remaining, setRemaining] = useState(totalSeconds)
   const [phase, setPhase] = useState<'idle' | 'running' | 'paused' | 'done'>('running')
   const [rounds, setRounds] = useState(0)
+  const [live, setLive] = useState<{ current_activity: string; focus_minutes: number } | null>(
+    null
+  )
   const timerRef = useRef<number | null>(null)
+
+  // 真实专注状态（采集器会话）
+  useEffect(() => {
+    const load = (): void => {
+      void window.desktop
+        .getStatus()
+        .then((s) => setLive({ current_activity: s.current_activity, focus_minutes: s.focus_minutes }))
+        .catch(() => {})
+    }
+    load()
+    const timer = window.setInterval(load, 5000)
+    return () => window.clearInterval(timer)
+  }, [])
 
   useEffect(() => {
     if (phase !== 'running') return
@@ -65,7 +82,11 @@ function FocusCard({ taskLabel = mockFocusLabel }: FocusCardProps): React.JSX.El
       <div className="focus-heading">
         <span className={`state-dot state-${phase}`} />
         <span>{statusText}</span>
-        <span className="focus-context">{taskLabel}</span>
+        <span className="focus-context">
+          {live && live.focus_minutes > 0
+            ? `${activityLabel(live.current_activity)} · ${live.focus_minutes} 分钟`
+            : taskLabel}
+        </span>
       </div>
       <div className="focus-time">{formatTime(remaining)}</div>
       <div className="focus-actions">

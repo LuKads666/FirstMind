@@ -1,14 +1,32 @@
 import { CalendarX2, Pencil, Plus, Trash2 } from 'lucide-react'
-import { useState } from 'react'
-import {
-  mockDeadlines,
-  type DeadlineItem
-} from '../data/mock'
+import { useEffect, useState } from 'react'
+import { type DeadlineItem } from '../data/mock'
 
 function DeadlineBoard(): React.JSX.Element {
-  const [items, setItems] = useState<DeadlineItem[]>(mockDeadlines)
+  const [items, setItems] = useState<DeadlineItem[]>([])
   const [editing, setEditing] = useState(false)
   const [selectedId, setSelectedId] = useState<string | null>(null)
+
+  const reload = (): void => {
+    void window.desktop
+      .getDeadlines()
+      .then((rows) =>
+        setItems(
+          rows.map((r) => ({
+            id: String(r.id),
+            title: r.title,
+            dueText: new Date(r.due_at).toLocaleDateString('zh-CN', {
+              month: 'numeric',
+              day: 'numeric'
+            }),
+            daysLeft: Math.max(0, Math.ceil(r.due_in_hours / 24))
+          }))
+        )
+      )
+      .catch(() => {})
+  }
+
+  useEffect(reload, [])
 
   const updateItem = (
     itemId: string,
@@ -17,20 +35,24 @@ function DeadlineBoard(): React.JSX.Element {
     setItems((current) =>
       current.map((item) => (item.id === itemId ? { ...item, ...patch } : item))
     )
+    if (patch.daysLeft !== undefined) {
+      const due = new Date(Date.now() + patch.daysLeft * 86400000)
+      void window.desktop.updateTask({
+        id: Number(itemId),
+        patch: { due_at: due.toISOString() }
+      })
+    }
   }
 
   const addItem = (): void => {
-    const item: DeadlineItem = {
-      id: `deadline-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
-      title: '新截止',
-      dueText: '9月30日',
-      daysLeft: 23
-    }
-    setItems((current) => [...current, item])
+    void window.desktop
+      .createTask({ title: '新截止', due_at: new Date(Date.now() + 23 * 86400000).toISOString() })
+      .then(reload)
   }
 
   const deleteItem = (itemId: string): void => {
     setItems((current) => current.filter((item) => item.id !== itemId))
+    void window.desktop.deleteTask(Number(itemId))
   }
 
   return (

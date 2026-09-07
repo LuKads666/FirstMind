@@ -7,7 +7,8 @@ import FocusCard from './components/FocusCard'
 import MusicBar from './components/MusicBar'
 import ScheduleTimeline from './components/ScheduleTimeline'
 import TodayCard from './components/TodayCard'
-import { mockTasks, type TaskItem } from './data/mock'
+import { type TaskItem } from './data/mock'
+import { dueText } from './data/real'
 
 const isAlertWindow =
   new URLSearchParams(window.location.search).get('window') === 'alert'
@@ -16,8 +17,22 @@ export default function App(): React.JSX.Element {
   return isAlertWindow ? <AlertPage /> : <DesktopScreen />
 }
 
+function rowToItem(row: TaskRow): TaskItem {
+  return {
+    id: String(row.id),
+    title: row.title,
+    meta: dueText(row.due_at),
+    tone:
+      row.status === 'done'
+        ? 'done'
+        : row.due_at && new Date(row.due_at).getTime() - Date.now() < 72 * 3600000
+          ? 'warn'
+          : 'normal'
+  }
+}
+
 function DesktopScreen(): React.JSX.Element {
-  const [tasks, setTasks] = useState<TaskItem[]>(mockTasks)
+  const [tasks, setTasks] = useState<TaskItem[]>([])
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent): void => {
@@ -29,16 +44,30 @@ function DesktopScreen(): React.JSX.Element {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [])
 
+  const reloadTasks = (): void => {
+    void window.desktop
+      .listTasks()
+      .then((rows) => setTasks(rows.map(rowToItem)))
+      .catch(() => {})
+  }
+
+  useEffect(() => {
+    reloadTasks()
+    const timer = window.setInterval(reloadTasks, 15000)
+    return () => window.clearInterval(timer)
+  }, [])
+
   const toggleTask = (taskId: string): void => {
+    const numericId = Number(taskId)
+    const target = tasks.find((t) => t.id === taskId)
+    if (!target || Number.isNaN(numericId)) return
+    const nextTone = target.tone === 'done' ? 'normal' : 'done'
     setTasks((current) =>
-      current.map((task) => {
-        if (task.id !== taskId) return task
-        return {
-          ...task,
-          tone: task.tone === 'done' ? 'normal' : 'done'
-        }
-      })
+      current.map((t) => (t.id === taskId ? { ...t, tone: nextTone } : t))
     )
+    void window.desktop
+      .updateTask({ id: numericId, patch: { status: nextTone === 'done' ? 'done' : 'open' } })
+      .then(reloadTasks)
   }
 
   const updateTask = (
@@ -48,23 +77,19 @@ function DesktopScreen(): React.JSX.Element {
     setTasks((current) =>
       current.map((task) => (task.id === taskId ? { ...task, ...patch } : task))
     )
+    if (patch.title !== undefined) {
+      void window.desktop.updateTask({ id: Number(taskId), patch: { title: patch.title } })
+    }
   }
 
   const addTask = (): void => {
-    const nextId = `task-${Date.now()}`
-    setTasks((current) => [
-      ...current,
-      {
-        id: nextId,
-        title: '新任务',
-        meta: '今日',
-        tone: 'normal'
-      }
-    ])
+    void window.desktop.createTask({ title: '新任务' }).then(reloadTasks)
   }
 
   const deleteTask = (taskId: string): void => {
     setTasks((current) => current.filter((task) => task.id !== taskId))
+    const numericId = Number(taskId)
+    if (!Number.isNaN(numericId)) void window.desktop.deleteTask(numericId)
   }
 
   return (

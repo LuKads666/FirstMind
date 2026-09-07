@@ -1,4 +1,5 @@
 import { getDatabase } from './database'
+import { todayDateString } from '../utils/time'
 
 export interface TaskRow {
   id: number
@@ -24,9 +25,10 @@ export function listTasks(): TaskRow[] {
     .prepare(
       `SELECT * FROM tasks
        WHERE status IN ('open', 'in_progress')
+          OR (status = 'done' AND date(updated_at) = ?)
        ORDER BY (due_at IS NULL), due_at, priority DESC, id`
     )
-    .all() as TaskRow[]
+    .all(todayDateString()) as TaskRow[]
 }
 
 export function createTask(input: CreateTaskInput): TaskRow {

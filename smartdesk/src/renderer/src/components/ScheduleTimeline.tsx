@@ -1,21 +1,48 @@
 import { CalendarClock, Pencil, Plus, Trash2 } from 'lucide-react'
-import { useState } from 'react'
-import {
-  mockSchedule,
-  type ScheduleItem
-} from '../data/mock'
+import { useEffect, useState } from 'react'
+import { type ScheduleItem } from '../data/mock'
 
 function nextId(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 10000)}`
 }
 
 function ScheduleTimeline(): React.JSX.Element {
-  const [items, setItems] = useState<ScheduleItem[]>(mockSchedule)
+  const [items, setItems] = useState<ScheduleItem[]>([])
   const [editing, setEditing] = useState(false)
   const initialId = items.find((item) => item.state === 'next')?.id ?? items[0]?.id
   const [selectedId, setSelectedId] = useState(initialId)
   const selected = items.find((item) => item.id === selectedId)
   const nextItem = items.find((item) => item.state === 'next')
+
+  useEffect(() => {
+    const load = (): void => {
+      void window.desktop
+        .getScheduleToday()
+        .then((events) => {
+          const now = new Date()
+          const mapped: ScheduleItem[] = events.map((ev) => {
+            const start = new Date(ev.start_at)
+            const end = ev.end_at ? new Date(ev.end_at) : start
+            const pad = (n: number): string => String(n).padStart(2, '0')
+            const time = `${pad(start.getHours())}:${pad(start.getMinutes())}-${pad(end.getHours())}:${pad(end.getMinutes())}`
+            const state: ScheduleItem['state'] =
+              end < now ? 'done' : start <= now ? 'next' : 'later'
+            return {
+              id: String(ev.id),
+              time,
+              title: ev.title,
+              subtitle: ev.location || '日程',
+              state
+            }
+          })
+          setItems(mapped)
+        })
+        .catch(() => {})
+    }
+    load()
+    const timer = window.setInterval(load, 60000)
+    return () => window.clearInterval(timer)
+  }, [])
 
   const updateItem = (
     itemId: string,
