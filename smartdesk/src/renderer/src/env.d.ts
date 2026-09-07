@@ -50,7 +50,40 @@ interface Window {
     }) => Promise<TaskRow | null>
     deleteTask: (id: number) => Promise<boolean>
     getStatus: () => Promise<StatusSnapshot>
+    getTodayStats: () => Promise<{
+      focus_minutes: number
+      entertainment_minutes: number
+      study_minutes: number
+      active_minutes: number
+      session_count: number
+      current_category: string
+    }>
+    getScheduleToday: () => Promise<
+      Array<{
+        id: number
+        title: string
+        source_type: string
+        start_at: string
+        end_at: string | null
+        location: string
+      }>
+    >
+    getDeadlines: () => Promise<
+      Array<{
+        id: number
+        title: string
+        due_at: string
+        due_in_hours: number
+        source_type: string
+      }>
+    >
     collectNow: () => Promise<ForegroundInfo | null>
     getAgentStatus: () => Promise<AgentStatusInfo>
+    evaluateRisks: () => Promise<{ dispatched: number }>
+    getSetting: (key: string) => Promise<unknown>
+    setSetting: (key: string, value: unknown) => Promise<boolean>
+    respondRisk: (payload: { id: number; action: string }) => Promise<boolean>
+    onRiskShow: (cb: (payload: unknown) => void) => () => void
+    onRiskRaised: (cb: (payload: unknown) => void) => () => void
   }
 }

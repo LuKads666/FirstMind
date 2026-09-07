@@ -13,6 +13,26 @@ contextBridge.exposeInMainWorld('desktop', {
   deleteTask: (id: number): Promise<boolean> => ipcRenderer.invoke(IpcChannels.TaskDelete, id),
 
   getStatus: (): Promise<unknown> => ipcRenderer.invoke(IpcChannels.StatusSnapshot),
+  getTodayStats: (): Promise<unknown> => ipcRenderer.invoke(IpcChannels.StatsToday),
+  getScheduleToday: (): Promise<unknown> => ipcRenderer.invoke(IpcChannels.ScheduleToday),
+  getDeadlines: (): Promise<unknown> => ipcRenderer.invoke(IpcChannels.DeadlinesList),
   collectNow: (): Promise<unknown> => ipcRenderer.invoke(IpcChannels.CollectNow),
-  getAgentStatus: (): Promise<unknown> => ipcRenderer.invoke(IpcChannels.AgentStatus)
+  getAgentStatus: (): Promise<unknown> => ipcRenderer.invoke(IpcChannels.AgentStatus),
+  evaluateRisks: (): Promise<unknown> => ipcRenderer.invoke(IpcChannels.RiskEvaluate),
+
+  getSetting: (key: string): Promise<unknown> => ipcRenderer.invoke(IpcChannels.GetSetting, key),
+  setSetting: (key: string, value: unknown): Promise<boolean> =>
+    ipcRenderer.invoke(IpcChannels.SetSetting, key, value),
+
+  respondRisk: (payload: { id: number; action: string }): Promise<boolean> =>
+    ipcRenderer.invoke(IpcChannels.RiskRespond, payload),
+
+  onRiskShow: (cb: (payload: unknown) => void): (() => void) => subscribe('risk:show', cb),
+  onRiskRaised: (cb: (payload: unknown) => void): (() => void) => subscribe('risk:raised', cb)
 })
+
+function subscribe(channel: string, cb: (payload: unknown) => void): () => void {
+  const handler = (_event: unknown, payload: unknown): void => cb(payload)
+  ipcRenderer.on(channel, handler)
+  return () => ipcRenderer.removeListener(channel, handler)
+}

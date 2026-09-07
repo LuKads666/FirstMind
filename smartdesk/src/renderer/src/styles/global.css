@@ -1015,3 +1015,91 @@ button {
     min-height: 78px;
   }
 }
+
+/* ── AlertWindow 风险提醒弹窗 ── */
+.alert-root {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding: 0;
+  background: transparent;
+  pointer-events: none;
+}
+
+.alert-card {
+  pointer-events: auto;
+  width: 368px;
+  border-radius: 16px;
+  background: rgba(17, 26, 30, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+  padding: 18px 18px 16px;
+  color: #eef6f4;
+  animation: alert-in 0.22s ease-out;
+}
+
+@keyframes alert-in {
+  from { transform: translateY(14px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.alert-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: #9adfd4;
+  background: rgba(47, 138, 128, 0.22);
+  border-radius: 999px;
+  padding: 3px 10px;
+  margin-bottom: 10px;
+}
+
+.alert-badge.high {
+  color: #ffd9a8;
+  background: rgba(212, 154, 58, 0.25);
+}
+
+.alert-card h3 {
+  margin: 0 0 6px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.alert-msg {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.65;
+  color: rgba(238, 246, 244, 0.78);
+}
+
+.alert-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.alert-btn {
+  flex: 1;
+  border: none;
+  border-radius: 10px;
+  padding: 9px 0;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 0.15s ease, opacity 0.15s ease;
+}
+
+.alert-btn:hover { filter: brightness(1.1); }
+
+.alert-btn.primary {
+  background: #2f8a80;
+  color: #f2fbf9;
+}
+
+.alert-btn.ghost {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(238, 246, 244, 0.85);
+}

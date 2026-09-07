@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import AlertPage from './components/AlertPage'
 import Companion from './components/Companion'
 import DailyStats from './components/DailyStats'
 import DeadlineBoard from './components/DeadlineBoard'
@@ -8,7 +9,14 @@ import ScheduleTimeline from './components/ScheduleTimeline'
 import TodayCard from './components/TodayCard'
 import { mockTasks, type TaskItem } from './data/mock'
 
-function App(): React.JSX.Element {
+const isAlertWindow =
+  new URLSearchParams(window.location.search).get('window') === 'alert'
+
+export default function App(): React.JSX.Element {
+  return isAlertWindow ? <AlertPage /> : <DesktopScreen />
+}
+
+function DesktopScreen(): React.JSX.Element {
   const [tasks, setTasks] = useState<TaskItem[]>(mockTasks)
 
   useEffect(() => {
@@ -91,5 +99,3 @@ function App(): React.JSX.Element {
     </div>
   )
 }
-
-export default App

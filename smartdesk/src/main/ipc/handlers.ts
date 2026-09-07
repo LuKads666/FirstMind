@@ -4,6 +4,7 @@ import {
   CreateTaskSchema,
   UpdateTaskSchema,
   IdSchema,
+  RiskRespondSchema,
   StatusSnapshot
 } from './channels'
 import { createTask, deleteTask, listTasks, updateTask } from '../storage/tasks-repo'
@@ -15,6 +16,8 @@ import { listEventsBetween, todayRange } from '../storage/calendar-repo'
 import { getAgentStatus } from '../agent/ollama-client'
 import { getSetting, setSetting } from '../storage/settings-repo'
 import { localIso } from '../utils/time'
+import { hideAlertWindow } from '../alert-window'
+import { evaluateOnce, triggerDemoRisk } from '../engine/scheduler'
 
 // 类型化 IPC 注册中心（设计文档 19）：渲染层不直接访问数据库与 Win32。
 
@@ -61,6 +64,20 @@ export function registerIpcHandlers(): void {
   ipcMain.handle(IpcChannels.SetSetting, (_event, key: string, value: unknown) => {
     setSetting(key, value)
     return true
+  })
+
+  ipcMain.handle(IpcChannels.RiskRespond, (_event, payload: unknown) => {
+    const { id, action } = RiskRespondSchema.parse(payload)
+    getDatabase()
+      .prepare('UPDATE notifications SET user_action = ? WHERE id = ?')
+      .run(action, id)
+    hideAlertWindow()
+    return true
+  })
+
+  ipcMain.handle(IpcChannels.RiskEvaluate, async () => {
+    const dispatched = await evaluateOnce()
+    return { dispatched: dispatched.length }
   })
 }
 

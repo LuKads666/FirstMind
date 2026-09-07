@@ -15,8 +15,15 @@ export const IpcChannels = {
   ScheduleToday: 'schedule:today',
   DeadlinesList: 'deadlines:list',
   GetSetting: 'settings:get',
-  SetSetting: 'settings:set'
+  SetSetting: 'settings:set',
+  RiskRespond: 'risk:respond',
+  RiskEvaluate: 'risk:evaluate'
 } as const
+
+export const RiskRespondSchema = z.object({
+  id: z.number().int().positive(),
+  action: z.enum(['accepted', 'snoozed', 'ignored'])
+})
 
 export const CreateTaskSchema = z.object({
   title: z.string().min(1).max(200),
