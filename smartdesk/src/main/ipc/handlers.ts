@@ -14,6 +14,7 @@ import { getCurrentFocusMinutes, getTodayStats } from '../storage/stats-repo'
 import { listEventsBetween, todayRange } from '../storage/calendar-repo'
 import { getAgentStatus } from '../agent/ollama-client'
 import { getSetting, setSetting } from '../storage/settings-repo'
+import { localIso } from '../utils/time'
 
 // 类型化 IPC 注册中心（设计文档 19）：渲染层不直接访问数据库与 Win32。
 
@@ -73,7 +74,7 @@ function buildStatusSnapshot(): StatusSnapshot {
        WHERE due_at IS NOT NULL AND due_at >= ? AND status IN ('open', 'in_progress')
        ORDER BY due_at LIMIT 1`
     )
-    .get(new Date().toISOString()) as { title: string; due_at: string } | undefined
+    .get(localIso()) as { title: string; due_at: string } | undefined
 
   const counts = getDatabase()
     .prepare(
@@ -81,9 +82,9 @@ function buildStatusSnapshot(): StatusSnapshot {
          SUM(CASE WHEN status = 'done' THEN 1 ELSE 0 END) AS done,
          COUNT(*) AS total
        FROM tasks
-       WHERE date(created_at) = date('now', 'localtime') OR status IN ('open', 'in_progress')`
+       WHERE date(created_at) = ? OR status IN ('open', 'in_progress')`
     )
-    .get() as { done: number | null; total: number }
+    .get(localIso().slice(0, 10)) as { done: number | null; total: number }
 
   return {
     current_activity: state.currentCategory,

@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS calendar_events (
   end_at      TEXT,
   all_day     INTEGER NOT NULL DEFAULT 0,
   location    TEXT    NOT NULL DEFAULT '',
-  imported_at TEXT    NOT NULL DEFAULT (datetime('now'))
+  imported_at TEXT    NOT NULL DEFAULT (datetime('now','localtime'))
 );
 CREATE INDEX IF NOT EXISTS idx_calendar_events_start ON calendar_events (start_at);
 
@@ -59,8 +59,8 @@ CREATE TABLE IF NOT EXISTS tasks (
   estimated_minutes INTEGER,
   status            TEXT    NOT NULL DEFAULT 'open',     -- open/in_progress/done/cancelled
   priority          TEXT    NOT NULL DEFAULT 'medium',   -- high/medium/low
-  created_at        TEXT    NOT NULL DEFAULT (datetime('now')),
-  updated_at        TEXT    NOT NULL DEFAULT (datetime('now'))
+  created_at        TEXT    NOT NULL DEFAULT (datetime('now','localtime')),
+  updated_at        TEXT    NOT NULL DEFAULT (datetime('now','localtime'))
 );
 CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks (status);
 CREATE INDEX IF NOT EXISTS idx_tasks_due ON tasks (due_at);

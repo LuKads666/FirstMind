@@ -1,5 +1,6 @@
 import type { AppCategory } from './category-mapper'
 import { mapCategory } from './category-mapper'
+import { localIso } from '../utils/time'
 
 // 采集调度器（设计文档 8.2/8.3/10.1）
 // 每秒采样一次前台窗口与活跃度：
@@ -137,7 +138,7 @@ export class BehaviorCollector {
   getState(): CollectorState {
     return {
       currentCategory: this.current?.category ?? 'away',
-      currentSessionStartedAt: this.current ? this.current.started_at.toISOString() : null,
+      currentSessionStartedAt: this.current ? localIso(this.current.started_at) : null,
       lastSampleAt: null
     }
   }
@@ -146,8 +147,8 @@ export class BehaviorCollector {
     if (!this.current) return
     const c = this.current
     this.store.insertSession({
-      started_at: c.started_at.toISOString(),
-      ended_at: now.toISOString(),
+      started_at: localIso(c.started_at),
+      ended_at: localIso(now),
       app_name: c.process_name,
       process_id: c.process_id,
       window_title: c.window_title,
