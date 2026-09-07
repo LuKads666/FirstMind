@@ -5,6 +5,7 @@ import {
   UpdateTaskSchema,
   IdSchema,
   RiskRespondSchema,
+  ChatSendSchema,
   StatusSnapshot
 } from './channels'
 import { createTask, deleteTask, listTasks, updateTask } from '../storage/tasks-repo'
@@ -19,6 +20,7 @@ import { localIso } from '../utils/time'
 import { hideAlertWindow } from '../alert-window'
 import { evaluateOnce, triggerDemoRisk } from '../engine/scheduler'
 import { chooseLibraryFolder, scanLibrary } from '../music/music-library'
+import { chatHistory, handleChat } from '../agent/agent-service'
 
 // 类型化 IPC 注册中心（设计文档 19）：渲染层不直接访问数据库与 Win32。
 
@@ -87,6 +89,13 @@ export function registerIpcHandlers(): void {
   })
 
   ipcMain.handle(IpcChannels.MusicList, () => scanLibrary())
+
+  ipcMain.handle(IpcChannels.ChatSend, async (_event, payload: unknown) => {
+    const { text } = ChatSendSchema.parse(payload)
+    return handleChat(text)
+  })
+
+  ipcMain.handle(IpcChannels.ChatHistory, () => chatHistory())
 }
 
 function buildStatusSnapshot(): StatusSnapshot {

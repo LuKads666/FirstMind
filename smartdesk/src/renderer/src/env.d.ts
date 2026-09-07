@@ -88,6 +88,8 @@ interface Window {
       Array<{ id: string; title: string; artist: string; path: string }>
     >
     musicUrl: (path: string) => string
+    chatSend: (text: string) => Promise<{ reply: string; source: string }>
+    chatHistory: () => Promise<Array<{ role: string; content: string; created_at: string }>>
     onRiskShow: (cb: (payload: unknown) => void) => () => void
     onRiskRaised: (cb: (payload: unknown) => void) => () => void
   }

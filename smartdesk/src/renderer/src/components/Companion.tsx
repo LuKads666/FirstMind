@@ -1,5 +1,5 @@
 import { Bot, ClipboardList, Send, Sparkles, X } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 interface ChatMessage {
   id: string
@@ -7,53 +7,59 @@ interface ChatMessage {
   text: string
 }
 
-const quickPrompts = ['今日安排', '拆实验报告', '提醒我']
+const quickPrompts = ['今晚怎么安排', '拆解实验报告', '今天状态怎么样']
+const SEED_TEXT = '我在的。可以问我今晚怎么安排，或者让我帮你拆解任务。'
 
 function makeId(): string {
   return `${Date.now()}-${Math.floor(Math.random() * 10000)}`
 }
 
-function buildReply(input: string): string {
-  const text = input.trim()
-  if (text.includes('安排') || text.includes('计划')) {
-    return '今晚建议先做实验报告 40 分钟，再做高数习题 25 分钟，中间留 5 分钟休息。'
-  }
-  if (text.includes('拆') || text.includes('任务')) {
-    return '实验报告可以先拆成三小段：整理数据 15 分钟、写摘要 20 分钟、检查结论 15 分钟。'
-  }
-  if (text.includes('提醒') || text.includes('专注')) {
-    return '我记住了。实验报告还剩 2 天，建议今晚至少完成第一段。'
-  }
-  return '我先记下这件事。今天还剩实验报告和高数习题，先开始比较容易的那一小段就好。'
-}
-
 function Companion(): React.JSX.Element {
   const [open, setOpen] = useState(false)
   const [input, setInput] = useState('')
+  const [pending, setPending] = useState(false)
   const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: 'seed',
-      role: 'assistant',
-      text: '今天还剩实验报告和高数习题，先从 25 分钟的实验报告开始吧。'
-    }
+    { id: 'seed', role: 'assistant', text: SEED_TEXT }
   ])
+
+  // 打开面板时载入最近对话
+  useEffect(() => {
+    if (!open) return
+    void window.desktop
+      .chatHistory()
+      .then((rows) => {
+        if (rows.length === 0) return
+        setMessages([
+          ...rows.map((r) => ({
+            id: `${r.created_at}-${r.role}`,
+            role: r.role === 'assistant' ? ('assistant' as const) : ('user' as const),
+            text: r.content
+          }))
+        ])
+      })
+      .catch(() => {})
+  }, [open])
 
   const send = (raw: string): void => {
     const text = raw.trim()
-    if (!text) return
+    if (!text || pending) return
 
-    setMessages((current) => [
-      ...current,
-      { id: makeId(), role: 'user', text }
-    ])
+    setMessages((current) => [...current, { id: makeId(), role: 'user', text }])
     setInput('')
+    setPending(true)
 
-    window.setTimeout(() => {
-      setMessages((current) => [
-        ...current,
-        { id: makeId(), role: 'assistant', text: buildReply(text) }
-      ])
-    }, 420)
+    void window.desktop
+      .chatSend(text)
+      .then(({ reply }) => {
+        setMessages((current) => [...current, { id: makeId(), role: 'assistant', text: reply }])
+      })
+      .catch(() => {
+        setMessages((current) => [
+          ...current,
+          { id: makeId(), role: 'assistant', text: '我这边刚才没反应过来，再说一次好吗？' }
+        ])
+      })
+      .finally(() => setPending(false))
   }
 
   return (

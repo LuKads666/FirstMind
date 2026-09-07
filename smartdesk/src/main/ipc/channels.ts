@@ -19,8 +19,14 @@ export const IpcChannels = {
   RiskRespond: 'risk:respond',
   RiskEvaluate: 'risk:evaluate',
   MusicChooseFolder: 'music:chooseFolder',
-  MusicList: 'music:list'
+  MusicList: 'music:list',
+  ChatSend: 'chat:send',
+  ChatHistory: 'chat:history'
 } as const
+
+export const ChatSendSchema = z.object({
+  text: z.string().min(1).max(500)
+})
 
 export const RiskRespondSchema = z.object({
   id: z.number().int().positive(),

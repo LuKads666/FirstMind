@@ -32,6 +32,11 @@ contextBridge.exposeInMainWorld('desktop', {
   musicList: (): Promise<unknown> => ipcRenderer.invoke(IpcChannels.MusicList),
   musicUrl: (path: string): string => `media://local/${encodeURI(path.replace(/\\/g, '/'))}`,
 
+  chatSend: (text: string): Promise<{ reply: string; source: string }> =>
+    ipcRenderer.invoke(IpcChannels.ChatSend, { text }),
+  chatHistory: (): Promise<Array<{ role: string; content: string; created_at: string }>> =>
+    ipcRenderer.invoke(IpcChannels.ChatHistory),
+
   onRiskShow: (cb: (payload: unknown) => void): (() => void) => subscribe('risk:show', cb),
   onRiskRaised: (cb: (payload: unknown) => void): (() => void) => subscribe('risk:raised', cb)
 })
