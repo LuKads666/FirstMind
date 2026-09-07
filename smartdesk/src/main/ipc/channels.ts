@@ -10,7 +10,12 @@ export const IpcChannels = {
   TaskDelete: 'task:delete',
   StatusSnapshot: 'status:snapshot',
   CollectNow: 'collect:now',
-  AgentStatus: 'agent:status'
+  AgentStatus: 'agent:status',
+  StatsToday: 'stats:today',
+  ScheduleToday: 'schedule:today',
+  DeadlinesList: 'deadlines:list',
+  GetSetting: 'settings:get',
+  SetSetting: 'settings:set'
 } as const
 
 export const CreateTaskSchema = z.object({
@@ -56,4 +61,30 @@ export interface AgentStatusInfo {
   available: boolean
   models: string[]
   base_url: string
+}
+
+export interface TodayStatsInfo {
+  focus_minutes: number
+  entertainment_minutes: number
+  study_minutes: number
+  active_minutes: number
+  session_count: number
+  current_category: string
+}
+
+export interface ScheduleEventInfo {
+  id: number
+  title: string
+  source_type: string
+  start_at: string
+  end_at: string | null
+  location: string
+}
+
+export interface DeadlineInfo {
+  id: number
+  title: string
+  due_at: string | null
+  due_in_hours: number | null
+  source_type: string
 }

@@ -1,6 +1,7 @@
 import koffi from 'koffi'
+import { mapCategory } from './category-mapper'
 
-// 前台窗口采集（设计文档 8.2 / 8.5）
+// 前台窗口采集（设计文档 8.2）
 // 只读取窗口句柄、标题与进程 ID，不注册键盘钩子、不读取输入内容。
 
 const user32 = koffi.load('user32.dll')
@@ -19,20 +20,12 @@ const QueryFullProcessImageNameW = kernel32.func(
 
 const PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
 
-const CATEGORY_RULES: Array<{ category: string; keywords: string[] }> = [
-  { category: 'study_document', keywords: ['.doc', '.docx', '.pdf', '.ppt', 'word', 'notion', 'obsidian', 'typora', '报告', '论文', '笔记'] },
-  { category: 'study_code', keywords: ['visual studio code', 'vscode', 'idea', 'pycharm', 'webstorm', 'visual studio', 'dev-c', 'codeblocks', 'git bash', '终端'] },
-  { category: 'study_video', keywords: ['mooc', '慕课', '网课', 'bilibili', '哔哩哔哩', '中国大学', '网易云课堂'] },
-  { category: 'communication', keywords: ['wechat', '微信', 'qq', '钉钉', 'dingtalk', 'outlook', '飞书', 'feishu', 'teams', 'thunder', 'foxmail'] },
-  { category: 'entertainment', keywords: ['youtube', 'netflix', 'iqiyi', '爱奇艺', '腾讯视频', '优酷', 'youku', '抖音', 'douyin', 'steam', 'epic games', 'game', '英雄联盟', '王者荣耀'] },
-  { category: 'music', keywords: ['spotify', 'netease_cloudmusic', 'cloudmusic', '网易云音乐', 'qqmusic', 'qq音乐', 'kugou', 'kuwo', 'foobar'] }
-]
-
 export interface RawForeground {
   hwnd: string
   process_id: number
   window_title: string
   process_name: string
+  category: string
 }
 
 export function readForegroundWindow(): RawForeground | null {
@@ -48,12 +41,16 @@ export function readForegroundWindow(): RawForeground | null {
   const pidBuf = Buffer.alloc(4)
   GetWindowThreadProcessId(hwnd, pidBuf)
   const process_id = pidBuf.readUInt32LE(0)
+  if (!process_id) return null
+
+  const process_name = readProcessName(process_id)
 
   return {
     hwnd: hwndStr,
     process_id,
     window_title,
-    process_name: readProcessName(process_id)
+    process_name,
+    category: mapCategory(process_name, window_title)
   }
 }
 
@@ -77,37 +74,14 @@ function readProcessName(pid: number): string {
   }
 }
 
-// 进程名 + 窗口标题 → 应用类别（M1 简版映射，M2 支持用户修正）
-export function mapCategory(processName: string, windowTitle: string): string {
-  const exe = processName.toLowerCase()
-  if (exe === 'explorer.exe' || exe === '') return 'unknown'
-  const hay = `${exe} ${windowTitle.toLowerCase()}`
-
-  for (const rule of CATEGORY_RULES) {
-    if (rule.keywords.some((k) => hay.includes(k))) return rule.category
-  }
-  if (exe.endsWith('.exe') && exe.includes('chrome')) return 'browsing_other'
-  if (['msedge.exe', 'firefox.exe', 'chrome.exe', 'browser.exe'].includes(exe)) {
-    return 'browsing_other'
-  }
-  if (windowTitle.includes('锁定') || windowTitle.includes('锁屏')) return 'away'
-  return 'unknown'
-}
-
-export function getForegroundInfo(): {
-  process_id: number
-  window_title: string
-  process_name: string
-  category: string
-  captured_at: string
-} | null {
+export function getForegroundInfo() {
   const raw = readForegroundWindow()
   if (!raw) return null
   return {
     process_id: raw.process_id,
     window_title: raw.window_title,
     process_name: raw.process_name,
-    category: mapCategory(raw.process_name, raw.window_title),
+    category: raw.category,
     captured_at: new Date().toISOString()
   }
 }
