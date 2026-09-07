@@ -7,3 +7,5 @@ allowBuilds:
 onlyBuiltDependencies:
   - electron
   - esbuild
+  - better-sqlite3
+  - koffi

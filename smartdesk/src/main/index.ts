@@ -1,49 +1,20 @@
-import { app, BrowserWindow, ipcMain, screen } from 'electron'
-import { join } from 'node:path'
+import { app, BrowserWindow } from 'electron'
+import { registerIpcHandlers } from './ipc/handlers'
+import { getDatabase, closeDatabase } from './storage/database'
+import { createTray, destroyTray } from './tray'
+import { createPreviewWindow, showOrRestorePreview } from './window-manager'
 
-function createPreviewWindow(): BrowserWindow {
-  const { bounds } = screen.getPrimaryDisplay()
-  const { width, height, x, y } = bounds
-
-  const win = new BrowserWindow({
-    width,
-    height,
-    x,
-    y,
-    frame: false,
-    fullscreen: true,
-    resizable: true,
-    show: false,
-    backgroundColor: '#172327',
-    title: '智伴桌面 UI 预览',
-    webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
-      contextIsolation: true,
-      nodeIntegration: false,
-      sandbox: false
-    }
-  })
-
-  win.setMenuBarVisibility(false)
-
-  if (process.env.ELECTRON_RENDERER_URL) {
-    void win.loadURL(process.env.ELECTRON_RENDERER_URL)
-  } else {
-    void win.loadFile(join(__dirname, '../renderer/index.html'))
-  }
-
-  win.once('ready-to-show', () => win.show())
-  win.webContents.on('before-input-event', (_, input) => {
-    if (input.type === 'keyDown' && input.key === 'F12') {
-      win.webContents.toggleDevTools()
-    }
-  })
-
-  return win
+// 单实例：托盘常驻应用，二次启动时唤起已有窗口
+if (!app.requestSingleInstanceLock()) {
+  app.quit()
 }
 
+app.on('second-instance', () => showOrRestorePreview())
+
 app.whenReady().then(() => {
-  ipcMain.handle('preview:close', () => app.quit())
+  getDatabase() // 初始化 SQLite（userData/smartdesk.db）
+  registerIpcHandlers()
+  createTray()
   createPreviewWindow()
 
   app.on('activate', () => {
@@ -57,4 +28,9 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit()
   }
+})
+
+app.on('will-quit', () => {
+  destroyTray()
+  closeDatabase()
 })
