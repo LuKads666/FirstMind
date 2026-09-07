@@ -83,6 +83,11 @@ interface Window {
     getSetting: (key: string) => Promise<unknown>
     setSetting: (key: string, value: unknown) => Promise<boolean>
     respondRisk: (payload: { id: number; action: string }) => Promise<boolean>
+    musicChooseFolder: () => Promise<{ folder: string | null; tracks: number }>
+    musicList: () => Promise<
+      Array<{ id: string; title: string; artist: string; path: string }>
+    >
+    musicUrl: (path: string) => string
     onRiskShow: (cb: (payload: unknown) => void) => () => void
     onRiskRaised: (cb: (payload: unknown) => void) => () => void
   }

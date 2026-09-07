@@ -5,6 +5,9 @@ import { createTray, destroyTray } from './tray'
 import { createPreviewWindow, showOrRestorePreview } from './window-manager'
 import { startCollector, stopCollector } from './collectors/runtime'
 import { startRiskScheduler, stopRiskScheduler } from './engine/scheduler'
+import { registerMediaProtocol, registerMediaHandler } from './music/media-protocol'
+
+registerMediaProtocol() // 必须在 app ready 前注册特权 scheme
 
 // 单实例：托盘常驻应用，二次启动时唤起已有窗口
 if (!app.requestSingleInstanceLock()) {
@@ -14,6 +17,7 @@ if (!app.requestSingleInstanceLock()) {
 app.on('second-instance', () => showOrRestorePreview())
 
 app.whenReady().then(() => {
+  registerMediaHandler()
   getDatabase() // 初始化 SQLite（userData/smartdesk.db）
   registerIpcHandlers()
   createTray()

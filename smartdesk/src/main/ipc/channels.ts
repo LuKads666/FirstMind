@@ -17,7 +17,9 @@ export const IpcChannels = {
   GetSetting: 'settings:get',
   SetSetting: 'settings:set',
   RiskRespond: 'risk:respond',
-  RiskEvaluate: 'risk:evaluate'
+  RiskEvaluate: 'risk:evaluate',
+  MusicChooseFolder: 'music:chooseFolder',
+  MusicList: 'music:list'
 } as const
 
 export const RiskRespondSchema = z.object({

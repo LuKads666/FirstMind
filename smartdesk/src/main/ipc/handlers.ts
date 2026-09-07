@@ -18,6 +18,7 @@ import { getSetting, setSetting } from '../storage/settings-repo'
 import { localIso } from '../utils/time'
 import { hideAlertWindow } from '../alert-window'
 import { evaluateOnce, triggerDemoRisk } from '../engine/scheduler'
+import { chooseLibraryFolder, scanLibrary } from '../music/music-library'
 
 // 类型化 IPC 注册中心（设计文档 19）：渲染层不直接访问数据库与 Win32。
 
@@ -79,6 +80,13 @@ export function registerIpcHandlers(): void {
     const dispatched = await evaluateOnce()
     return { dispatched: dispatched.length }
   })
+
+  ipcMain.handle(IpcChannels.MusicChooseFolder, async () => {
+    const folder = await chooseLibraryFolder()
+    return { folder, tracks: scanLibrary() }
+  })
+
+  ipcMain.handle(IpcChannels.MusicList, () => scanLibrary())
 }
 
 function buildStatusSnapshot(): StatusSnapshot {

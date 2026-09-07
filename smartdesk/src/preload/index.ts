@@ -27,6 +27,11 @@ contextBridge.exposeInMainWorld('desktop', {
   respondRisk: (payload: { id: number; action: string }): Promise<boolean> =>
     ipcRenderer.invoke(IpcChannels.RiskRespond, payload),
 
+  musicChooseFolder: (): Promise<unknown> =>
+    ipcRenderer.invoke(IpcChannels.MusicChooseFolder),
+  musicList: (): Promise<unknown> => ipcRenderer.invoke(IpcChannels.MusicList),
+  musicUrl: (path: string): string => `media://local/${encodeURI(path.replace(/\\/g, '/'))}`,
+
   onRiskShow: (cb: (payload: unknown) => void): (() => void) => subscribe('risk:show', cb),
   onRiskRaised: (cb: (payload: unknown) => void): (() => void) => subscribe('risk:raised', cb)
 })
