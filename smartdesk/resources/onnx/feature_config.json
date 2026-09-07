@@ -1,0 +1,14 @@
+{
+  "seq_len": 128,
+  "num_features": 7,
+  "num_feature_order": [
+    "hour_sin",
+    "hour_cos",
+    "is_weekend",
+    "input_active",
+    "idle_norm",
+    "is_locked",
+    "file_events"
+  ],
+  "notes": "hour 为小时+分钟/24 的 sin/cos 编码; idle_norm = min(idle_seconds,1800)/1800"
+}
