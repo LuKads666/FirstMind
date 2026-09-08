@@ -1341,3 +1341,116 @@ button {
   color: rgba(231, 241, 239, 0.35);
   padding-top: 4px;
 }
+
+/* ── 时钟组件 ── */
+.clock-slot {
+  position: absolute;
+  top: 78px;
+  left: 24px;
+  z-index: 20;
+}
+
+.clock-card {
+  min-width: 220px;
+  padding: 18px 26px 14px;
+}
+
+.clock-time {
+  display: flex;
+  align-items: baseline;
+  font-size: 54px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #eef6f4;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.clock-colon {
+  margin: 0 4px;
+  animation: clock-blink 2s step-end infinite;
+  color: #3fae79;
+}
+
+@keyframes clock-blink {
+  50% { opacity: 0.25; }
+}
+
+.clock-date {
+  margin-top: 8px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: rgba(238, 246, 244, 0.6);
+}
+
+/* ── 主控台胶囊开关 ── */
+.switch {
+  position: relative;
+  width: 46px;
+  height: 26px;
+  border-radius: 999px;
+  border: none;
+  background: rgba(255, 255, 255, 0.14);
+  cursor: pointer;
+  transition: background 0.2s ease;
+  flex-shrink: 0;
+}
+
+.switch .switch-knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(231, 241, 239, 0.85);
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.switch.on { background: #2f8a80; }
+
+.switch.on .switch-knob {
+  transform: translateX(20px);
+  background: #eafff9;
+}
+
+.eval-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.eval-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid rgba(63, 174, 121, 0.5);
+  background: rgba(63, 174, 121, 0.16);
+  color: #9adfd4;
+  border-radius: 8px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.eval-btn:hover { background: rgba(63, 174, 121, 0.32); }
+
+.eval-hint { color: #3fae79; }
+
+/* ── 音乐音量 ── */
+.volume-box {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--ink-soft);
+}
+
+.range-volume { width: 56px; }
+
+/* ── 日程行可读性 ── */
+.schedule-row { border-radius: 8px; }
+.schedule-row.state-done { opacity: 0.82; }
+.schedule-time { font-weight: 600; }

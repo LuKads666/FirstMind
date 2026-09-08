@@ -4,6 +4,7 @@ import { IpcChannels } from '../main/ipc/channels'
 // preload：向渲染层暴露类型化的最小能力面（设计文档 5 架构规则）
 contextBridge.exposeInMainWorld('desktop', {
   closePreview: (): Promise<void> => ipcRenderer.invoke(IpcChannels.PreviewClose),
+  hidePreview: (): Promise<boolean> => ipcRenderer.invoke(IpcChannels.PreviewHide),
 
   listTasks: (): Promise<unknown> => ipcRenderer.invoke(IpcChannels.TasksList),
   createTask: (payload: unknown): Promise<unknown> =>

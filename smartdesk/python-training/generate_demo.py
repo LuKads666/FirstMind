@@ -237,13 +237,13 @@ def rng_jitter(rng, amp):
 
 def seed_calendar_and_tasks(conn, now, demo):
     """课程表 + 考试/作业 + 任务（演示场景：实验报告 48h 内截止）"""
-    # 未来 14 天的工作日课程
+    # 未来 14 天的工作日课程（按 课程序号 = 日期序数*3 + 场次 取模，保证同日不重复）
     for offset in range(-14, 15):
         d = (now + timedelta(days=offset)).date()
         if d.weekday() >= 5:
             continue
-        for hour, minute, dur in [(8, 0, 100), (14, 0, 100), (19, 0, 90)]:
-            course = COURSES[(d.toordinal() + hour) % len(COURSES)]
+        for slot, (hour, minute, dur) in enumerate([(8, 0, 100), (14, 0, 100), (19, 0, 90)]):
+            course = COURSES[(d.toordinal() * 3 + slot) % len(COURSES)]
             start = datetime(d.year, d.month, d.day, hour, minute)
             conn.execute(
                 "INSERT INTO calendar_events (title, source_type, start_at, end_at, all_day, location) VALUES (?,?,?,?,0,?)",

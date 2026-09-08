@@ -58,5 +58,6 @@ export function dueText(dueAt: string | null): string {
     const h = Math.max(1, Math.round(hours))
     return h <= 1 ? '即将截止' : `剩 ${h} 小时`
   }
-  return `剩 ${Math.round(hours / 24)} 天`
+  // 与截止卡一致：按小时四舍五入到天，最少 1 天
+  return `剩 ${Math.max(1, Math.round(hours / 24))} 天`
 }

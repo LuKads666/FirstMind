@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import AlertPage from './components/AlertPage'
+import ClockCard from './components/ClockCard'
 import Companion from './components/Companion'
 import ConsolePage from './components/ConsolePage'
 import DailyStats from './components/DailyStats'
@@ -48,6 +49,7 @@ function rowToItem(row: TaskRow): TaskItem {
 }
 
 const WIDGET_TITLES: Record<string, string> = {
+  clock: '时间',
   today: '今日任务',
   schedule: '今日日程',
   deadline: '截止日期',
@@ -67,7 +69,8 @@ function DesktopScreen(): React.JSX.Element {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent): void => {
       if (event.key === 'Escape') {
-        void window.desktop.closePreview()
+        // 隐藏到托盘（托盘左键/菜单可恢复），退出走托盘右键
+        void window.desktop.hidePreview()
       }
     }
     window.addEventListener('keydown', onKeyDown)
@@ -291,6 +294,12 @@ function DesktopScreen(): React.JSX.Element {
           ))}
         </div>
       )}
+
+      <div className="clock-slot">
+        <WidgetShell {...shellProps('clock')} naturalRect={null}>
+          <ClockCard />
+        </WidgetShell>
+      </div>
 
       <div className="right-stack">
         <WidgetShell {...shellProps('today')} naturalRect={null}>

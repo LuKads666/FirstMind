@@ -34,6 +34,7 @@ import {
 } from '../storage/focus-repo'
 import { broadcastToDesktop, hideAlertWindow } from '../alert-window'
 import { createConsoleWindow } from '../console-window'
+import { hideToTray } from '../window-manager'
 
 function stopAnyActiveFocus(): void {
   const active = getActiveFocusSession()
@@ -44,6 +45,10 @@ function stopAnyActiveFocus(): void {
 
 export function registerIpcHandlers(): void {
   ipcMain.handle(IpcChannels.PreviewClose, () => app.quit())
+  ipcMain.handle(IpcChannels.PreviewHide, () => {
+    hideToTray()
+    return true
+  })
 
   ipcMain.handle(IpcChannels.TasksList, () => listTasks())
 
@@ -70,7 +75,21 @@ export function registerIpcHandlers(): void {
 
   ipcMain.handle(IpcChannels.StatsToday, () => {
     const state = getCollectorState()
-    return getTodayStats(state.currentCategory)
+    const stats = getTodayStats(state.currentCategory)
+    // 进行中的学习会话也计入今日专注分钟
+    if (
+      state.currentCategory.startsWith('study_') &&
+      state.currentSessionStartedAt
+    ) {
+      const minutes = Math.max(
+        0,
+        Math.round((Date.now() - new Date(state.currentSessionStartedAt).getTime()) / 60000)
+      )
+      if (minutes > 0 && minutes < 600) {
+        stats.focus_minutes += minutes
+      }
+    }
+    return stats
   })
 
   ipcMain.handle(IpcChannels.ScheduleToday, () => {

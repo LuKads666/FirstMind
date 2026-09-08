@@ -16,7 +16,7 @@ function formatTime(totalSeconds: number): string {
 function FocusCard({ taskLabel = mockFocusLabel }: FocusCardProps): React.JSX.Element {
   const totalSeconds = 25 * 60
   const [remaining, setRemaining] = useState(totalSeconds)
-  const [phase, setPhase] = useState<'idle' | 'running' | 'paused' | 'done'>('running')
+  const [phase, setPhase] = useState<'idle' | 'running' | 'paused' | 'done'>('idle')
   const [rounds, setRounds] = useState(0)
   const [live, setLive] = useState<{ current_activity: string; focus_minutes: number } | null>(
     null
@@ -105,7 +105,13 @@ function FocusCard({ taskLabel = mockFocusLabel }: FocusCardProps): React.JSX.El
   }, [phase])
 
   const statusText =
-    phase === 'running' ? '专注中' : phase === 'paused' ? '已暂停' : '专注完成'
+    phase === 'running'
+      ? '专注中'
+      : phase === 'paused'
+        ? '已暂停'
+        : phase === 'done'
+          ? '专注完成'
+          : '待开始'
   const progress = ((totalSeconds - remaining) / totalSeconds) * 100
 
   const toggle = (): void => {

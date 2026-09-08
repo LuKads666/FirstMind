@@ -4,6 +4,7 @@ import { z } from 'zod'
 
 export const IpcChannels = {
   PreviewClose: 'preview:close',
+  PreviewHide: 'preview:hide',
   TasksList: 'tasks:list',
   TaskCreate: 'task:create',
   TaskUpdate: 'task:update',

@@ -60,6 +60,10 @@ export function showOrRestorePreview(): void {
   }
 }
 
+export function hideToTray(): void {
+  getPreviewWindow()?.hide()
+}
+
 export function quitApp(): void {
   app.quit()
 }

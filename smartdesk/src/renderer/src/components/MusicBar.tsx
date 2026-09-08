@@ -1,4 +1,4 @@
-import { FolderOpen, Music2, Pause, Play, SkipBack, SkipForward } from 'lucide-react'
+import { FolderOpen, Music2, Pause, Play, SkipBack, SkipForward, Volume2 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
 interface Track {
@@ -21,6 +21,7 @@ function MusicBar(): React.JSX.Element {
   const [playing, setPlaying] = useState(false)
   const [elapsed, setElapsed] = useState(0)
   const [duration, setDuration] = useState(0)
+  const [volume, setVolume] = useState(0.8)
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
   const track = tracks[trackIndex]
@@ -35,6 +36,10 @@ function MusicBar(): React.JSX.Element {
   useEffect(() => {
     loadLibrary()
   }, [])
+
+  useEffect(() => {
+    if (audioRef.current) audioRef.current.volume = volume
+  }, [volume])
 
   // 音轨切换：换 src 并自动播放
   useEffect(() => {
@@ -136,6 +141,18 @@ function MusicBar(): React.JSX.Element {
           }}
         />
         <span>{formatSeconds(duration)}</span>
+        <span className="volume-box">
+          <Volume2 size={12} aria-hidden="true" />
+          <input
+            className="range range-volume"
+            type="range"
+            min={0}
+            max={100}
+            value={Math.round(volume * 100)}
+            aria-label="播放音量"
+            onChange={(event) => setVolume(Number(event.target.value) / 100)}
+          />
+        </span>
       </div>
     </article>
   )

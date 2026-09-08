@@ -19,7 +19,7 @@ function DeadlineBoard(): React.JSX.Element {
               month: 'numeric',
               day: 'numeric'
             }),
-            daysLeft: Math.max(0, Math.ceil(r.due_in_hours / 24))
+            daysLeft: Math.max(1, Math.round(r.due_in_hours / 24))
           }))
         )
       )

@@ -1,4 +1,4 @@
-import { ShieldCheck, Trash2, ToggleLeft, ToggleRight } from 'lucide-react'
+import { Play, Settings, ShieldCheck, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 // 主控台（设计文档 6.4）：设置、数据管理、隐私说明
@@ -16,6 +16,7 @@ export default function ConsolePage(): React.JSX.Element {
   const [demo, setDemo] = useState(false)
   const [login, setLogin] = useState(false)
   const [cleared, setCleared] = useState(false)
+  const [evalHint, setEvalHint] = useState('')
 
   const loadStats = (): void => {
     void window.desktop.getDataStats().then(setStats).catch(() => {})
@@ -23,6 +24,10 @@ export default function ConsolePage(): React.JSX.Element {
 
   useEffect(() => {
     document.title = '智伴桌面 · 主控台'
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') window.close()
+    }
+    window.addEventListener('keydown', onKey)
     loadStats()
     void window.desktop.getSetting('do_not_disturb', { enabled: false }).then((v) => {
       const setting = v as { enabled?: boolean } | null
@@ -54,6 +59,16 @@ export default function ConsolePage(): React.JSX.Element {
       setLogin(next)
       void window.desktop.setLoginItem(next).catch(() => {})
     }
+  }
+
+  const runEvaluate = (): void => {
+    void window.desktop
+      .evaluateRisks()
+      .then(({ dispatched }) => {
+        setEvalHint(dispatched > 0 ? `已触发 ${dispatched} 条提醒，看看桌面右下角` : '当前没有满足条件的风险')
+        window.setTimeout(() => setEvalHint(''), 4000)
+      })
+      .catch(() => setEvalHint('评估失败'))
   }
 
   const clearData = (): void => {
@@ -112,7 +127,7 @@ export default function ConsolePage(): React.JSX.Element {
 
       <section className="console-section">
         <h2>
-          <ToggleRight size={15} /> 设置
+          <Settings size={15} /> 设置
         </h2>
         <div className="setting-rows">
           {settings.map((s) => (
@@ -120,16 +135,24 @@ export default function ConsolePage(): React.JSX.Element {
               <div>
                 <strong>{s.label}</strong>
                 <small>{s.hint}</small>
+                {s.key === 'demo_mode' && (
+                  <div className="eval-row">
+                    <button type="button" className="eval-btn" onClick={runEvaluate}>
+                      <Play size={11} /> 立即评估
+                    </button>
+                    {evalHint && <small className="eval-hint">{evalHint}</small>}
+                  </div>
+                )}
               </div>
               <button
                 type="button"
-                className={`toggle-btn ${s.value ? 'on' : ''}`}
+                className={`switch ${s.value ? 'on' : ''}`}
                 role="switch"
                 aria-checked={s.value}
                 aria-label={s.label}
                 onClick={() => toggle(s)}
               >
-                {s.value ? <ToggleRight size={20} /> : <ToggleLeft size={20} />}
+                <span className="switch-knob" />
               </button>
             </div>
           ))}

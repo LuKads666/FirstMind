@@ -37,6 +37,7 @@ interface TaskRow {
 interface Window {
   desktop: {
     closePreview: () => Promise<void>
+    hidePreview: () => Promise<boolean>
     listTasks: () => Promise<TaskRow[]>
     createTask: (payload: {
       title: string
