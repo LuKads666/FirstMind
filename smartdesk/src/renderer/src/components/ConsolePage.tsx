@@ -22,6 +22,7 @@ export default function ConsolePage(): React.JSX.Element {
   }
 
   useEffect(() => {
+    document.title = '智伴桌面 · 主控台'
     loadStats()
     void window.desktop.getSetting('do_not_disturb', { enabled: false }).then((v) => {
       const setting = v as { enabled?: boolean } | null

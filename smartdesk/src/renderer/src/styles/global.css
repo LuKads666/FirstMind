@@ -1245,7 +1245,8 @@ button {
 
 /* ── 主控台 ── */
 .console-root {
-  min-height: 100vh;
+  height: 100vh;
+  overflow-y: auto;
   background: linear-gradient(160deg, #10181c, #17232a 60%, #1d2f36);
   color: #e7f1ef;
   padding: 34px 44px 20px;

@@ -13,6 +13,7 @@ export default function AlertPage(): React.JSX.Element {
   const [risk, setRisk] = useState<RiskPayload | null>(null)
 
   useEffect(() => {
+    document.title = '智伴桌面 · 提醒'
     const off = window.desktop.onRiskShow((payload) => setRisk(payload as RiskPayload))
     return off
   }, [])
