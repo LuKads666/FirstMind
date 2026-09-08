@@ -80,7 +80,7 @@ interface Window {
     collectNow: () => Promise<ForegroundInfo | null>
     getAgentStatus: () => Promise<AgentStatusInfo>
     evaluateRisks: () => Promise<{ dispatched: number }>
-    getSetting: (key: string) => Promise<unknown>
+    getSetting: (key: string, fallback?: unknown) => Promise<unknown>
     setSetting: (key: string, value: unknown) => Promise<boolean>
     respondRisk: (payload: { id: number; action: string }) => Promise<boolean>
     musicChooseFolder: () => Promise<{ folder: string | null; tracks: number }>
@@ -94,6 +94,16 @@ interface Window {
     wallpaperGet: () => Promise<{ type: 'theme' | 'image'; id?: string; path?: string }>
     wallpaperSetTheme: (id: string) => Promise<unknown>
     wallpaperChooseImage: () => Promise<{ type: 'image'; path: string } | null>
+    wallpaperSyncFromSystem: () => Promise<{ type: 'image'; path: string } | null>
+    openConsole: () => Promise<boolean>
+    getDataStats: () => Promise<Record<string, number>>
+    clearBehaviorData: () => Promise<boolean>
+    getLoginItem: () => Promise<{ openAtLogin: boolean }>
+    setLoginItem: (openAtLogin: boolean) => Promise<boolean>
+    focusStart: (taskId: number | null) => Promise<{ id: number; started_at: string }>
+    focusStop: (id: number, completed: boolean) => Promise<unknown>
+    focusActive: () => Promise<{ id: number; started_at: string; task_id: number | null } | null>
+    onFocusStarted: (cb: (payload: unknown) => void) => () => void
     onRiskShow: (cb: (payload: unknown) => void) => () => void
     onRiskRaised: (cb: (payload: unknown) => void) => () => void
   }

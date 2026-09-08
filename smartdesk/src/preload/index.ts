@@ -43,6 +43,25 @@ contextBridge.exposeInMainWorld('desktop', {
     ipcRenderer.invoke(IpcChannels.WallpaperSetTheme, id),
   wallpaperChooseImage: (): Promise<unknown> =>
     ipcRenderer.invoke(IpcChannels.WallpaperChooseImage),
+  wallpaperSyncFromSystem: (): Promise<unknown> =>
+    ipcRenderer.invoke(IpcChannels.WallpaperSyncFromSystem),
+
+  openConsole: (): Promise<boolean> => ipcRenderer.invoke(IpcChannels.ConsoleOpen),
+  getDataStats: (): Promise<Record<string, number>> =>
+    ipcRenderer.invoke(IpcChannels.DataStats),
+  clearBehaviorData: (): Promise<boolean> => ipcRenderer.invoke(IpcChannels.DataClear),
+  getLoginItem: (): Promise<{ openAtLogin: boolean }> =>
+    ipcRenderer.invoke(IpcChannels.LoginItemGet),
+  setLoginItem: (openAtLogin: boolean): Promise<boolean> =>
+    ipcRenderer.invoke(IpcChannels.LoginItemSet, openAtLogin),
+
+  focusStart: (taskId: number | null): Promise<unknown> =>
+    ipcRenderer.invoke(IpcChannels.FocusStart, taskId),
+  focusStop: (id: number, completed: boolean): Promise<unknown> =>
+    ipcRenderer.invoke(IpcChannels.FocusStop, { id, completed }),
+  focusActive: (): Promise<unknown> => ipcRenderer.invoke(IpcChannels.FocusActive),
+  onFocusStarted: (cb: (payload: unknown) => void): (() => void) =>
+    subscribe('focus:started', cb),
 
   onRiskShow: (cb: (payload: unknown) => void): (() => void) => subscribe('risk:show', cb),
   onRiskRaised: (cb: (payload: unknown) => void): (() => void) => subscribe('risk:raised', cb)

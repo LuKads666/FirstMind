@@ -25,7 +25,16 @@ export const IpcChannels = {
   ImportFile: 'import:file',
   WallpaperGet: 'wallpaper:get',
   WallpaperSetTheme: 'wallpaper:setTheme',
-  WallpaperChooseImage: 'wallpaper:chooseImage'
+  WallpaperChooseImage: 'wallpaper:chooseImage',
+  WallpaperSyncFromSystem: 'wallpaper:syncFromSystem',
+  ConsoleOpen: 'console:open',
+  DataStats: 'data:stats',
+  DataClear: 'data:clear',
+  LoginItemGet: 'loginItem:get',
+  LoginItemSet: 'loginItem:set',
+  FocusStart: 'focus:start',
+  FocusStop: 'focus:stop',
+  FocusActive: 'focus:active'
 } as const
 
 export const ChatSendSchema = z.object({

@@ -1,4 +1,4 @@
-import { Image as ImageIcon } from 'lucide-react'
+import { Download, Image as ImageIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 // 壁纸选择（设计文档 6.3 阶段 1）：内置主题 + 本机图片（同时更新系统壁纸）
@@ -19,6 +19,7 @@ export function useWallpaper(): {
   wallpaper: WallpaperSetting
   applyTheme: (id: string) => void
   chooseImage: () => void
+  syncFromSystem: () => void
 } {
   const [wallpaper, setWallpaper] = useState<WallpaperSetting>({ type: 'theme', id: 'aurora' })
 
@@ -43,12 +44,29 @@ export function useWallpaper(): {
       .catch(() => {})
   }
 
-  return { wallpaper, applyTheme, chooseImage }
+  const syncFromSystem = (): void => {
+    void window.desktop
+      .wallpaperSyncFromSystem()
+      .then((w) => {
+        if (w) setWallpaper(w as WallpaperSetting)
+      })
+      .catch(() => {})
+  }
+
+  return { wallpaper, applyTheme, chooseImage, syncFromSystem }
 }
 
-function WallpaperPicker(): React.JSX.Element {
-  const { wallpaper, applyTheme, chooseImage } = useWallpaper()
-
+function WallpaperPicker({
+  wallpaper,
+  onApplyTheme,
+  onChooseImage,
+  onSyncFromSystem
+}: {
+  wallpaper: WallpaperSetting
+  onApplyTheme: (id: string) => void
+  onChooseImage: () => void
+  onSyncFromSystem: () => void
+}): React.JSX.Element {
   return (
     <div className="wallpaper-picker" role="toolbar" aria-label="壁纸选择">
       {Object.keys(THEME_CSS).map((id) => (
@@ -58,16 +76,25 @@ function WallpaperPicker(): React.JSX.Element {
           className={`wallpaper-dot ${wallpaper.type === 'theme' && wallpaper.id === id ? 'is-active' : ''}`}
           style={{ backgroundImage: THEME_CSS[id] }}
           aria-label={`主题壁纸 ${id}`}
-          onClick={() => applyTheme(id)}
+          onClick={() => onApplyTheme(id)}
         />
       ))}
       <button
         type="button"
         className={`wallpaper-dot image ${wallpaper.type === 'image' ? 'is-active' : ''}`}
         aria-label="选择本机图片"
-        onClick={chooseImage}
+        onClick={onChooseImage}
       >
         <ImageIcon size={12} />
+      </button>
+      <button
+        type="button"
+        className="wallpaper-dot image"
+        aria-label="同步系统桌面壁纸到程序"
+        title="把 Windows 桌面壁纸同步为程序壁纸"
+        onClick={onSyncFromSystem}
+      >
+        <Download size={12} />
       </button>
     </div>
   )

@@ -17,7 +17,6 @@ import { listEventsBetween, todayRange } from '../storage/calendar-repo'
 import { getAgentStatus } from '../agent/ollama-client'
 import { getSetting, setSetting } from '../storage/settings-repo'
 import { localIso } from '../utils/time'
-import { hideAlertWindow } from '../alert-window'
 import { evaluateOnce, triggerDemoRisk } from '../engine/scheduler'
 import { chooseLibraryFolder, scanLibrary } from '../music/music-library'
 import { chatHistory, handleChat } from '../agent/agent-service'
@@ -25,8 +24,21 @@ import { importScheduleFile } from '../importers/import-service'
 import {
   chooseWallpaperImage,
   getWallpaper,
-  setWallpaperTheme
+  setWallpaperTheme,
+  syncFromSystemWallpaper
 } from '../wallpaper-manager'
+import {
+  getActiveFocusSession,
+  startFocusSession,
+  stopFocusSession
+} from '../storage/focus-repo'
+import { broadcastToDesktop, hideAlertWindow } from '../alert-window'
+import { createConsoleWindow } from '../console-window'
+
+function stopAnyActiveFocus(): void {
+  const active = getActiveFocusSession()
+  if (active) stopFocusSession(active.id, false)
+}
 
 // 类型化 IPC 注册中心（设计文档 19）：渲染层不直接访问数据库与 Win32。
 
@@ -77,10 +89,31 @@ export function registerIpcHandlers(): void {
 
   ipcMain.handle(IpcChannels.RiskRespond, (_event, payload: unknown) => {
     const { id, action } = RiskRespondSchema.parse(payload)
+
+    // 「开始任务」联动专注闭环：查提醒对应的任务，自动开启专注会话
+    let startedFocusTaskId: number | null = null
+    if (action === 'accepted') {
+      const row = getDatabase()
+        .prepare(
+          `SELECT re.task_id AS task_id FROM notifications n
+           JOIN risk_events re ON n.risk_id = re.id WHERE n.id = ?`
+        )
+        .get(id) as { task_id: number | null } | undefined
+      if (row?.task_id) {
+        stopAnyActiveFocus()
+        startFocusSession(row.task_id)
+        startedFocusTaskId = row.task_id
+      }
+    }
+
     getDatabase()
       .prepare('UPDATE notifications SET user_action = ? WHERE id = ?')
       .run(action, id)
     hideAlertWindow()
+
+    if (startedFocusTaskId !== null) {
+      broadcastToDesktop('focus:started', { task_id: startedFocusTaskId })
+    }
     return true
   })
 
@@ -110,6 +143,73 @@ export function registerIpcHandlers(): void {
   ipcMain.handle(IpcChannels.WallpaperSetTheme, (_event, id: string) => setWallpaperTheme(id))
 
   ipcMain.handle(IpcChannels.WallpaperChooseImage, () => chooseWallpaperImage())
+
+  ipcMain.handle(IpcChannels.WallpaperSyncFromSystem, () => syncFromSystemWallpaper())
+
+  ipcMain.handle(IpcChannels.ConsoleOpen, () => {
+    createConsoleWindow()
+    return true
+  })
+
+  ipcMain.handle(IpcChannels.DataStats, () => {
+    const db = getDatabase()
+    const count = (table: string): number => {
+      try {
+        return (db.prepare(`SELECT COUNT(*) AS n FROM ${table}`).get() as { n: number }).n
+      } catch {
+        return 0
+      }
+    }
+    return {
+      app_sessions: count('app_sessions'),
+      activity_ticks: count('activity_ticks'),
+      file_events: count('file_events'),
+      focus_sessions: count('focus_sessions'),
+      risk_events: count('risk_events'),
+      notifications: count('notifications'),
+      chat_logs: count('chat_logs'),
+      tasks: count('tasks'),
+      calendar_events: count('calendar_events')
+    }
+  })
+
+  ipcMain.handle(IpcChannels.DataClear, () => {
+    const db = getDatabase()
+    // 清除全部行为数据（设计文档 16 隐私设计）；任务、日程与设置保留
+    const tables = [
+      'app_sessions',
+      'activity_ticks',
+      'file_events',
+      'focus_sessions',
+      'risk_events',
+      'notifications',
+      'chat_logs',
+      'model_predictions',
+      'behavior_labels',
+      'user_feedback'
+    ]
+    for (const t of tables) db.prepare(`DELETE FROM ${t}`).run()
+    return true
+  })
+
+  ipcMain.handle(IpcChannels.LoginItemGet, () => app.getLoginItemSettings())
+
+  ipcMain.handle(IpcChannels.LoginItemSet, (_event, openAtLogin: boolean) => {
+    app.setLoginItemSettings({ openAtLogin })
+    return app.getLoginItemSettings().openAtLogin
+  })
+
+  ipcMain.handle(IpcChannels.FocusStart, (_event, taskId: number | null) => {
+    stopAnyActiveFocus()
+    return startFocusSession(taskId ?? null)
+  })
+
+  ipcMain.handle(IpcChannels.FocusStop, (_event, payload: unknown) => {
+    const { id, completed } = payload as { id: number; completed: boolean }
+    return stopFocusSession(id, Boolean(completed))
+  })
+
+  ipcMain.handle(IpcChannels.FocusActive, () => getActiveFocusSession())
 }
 
 function buildStatusSnapshot(): StatusSnapshot {

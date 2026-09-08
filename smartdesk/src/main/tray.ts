@@ -2,6 +2,7 @@ import { Tray, Menu, nativeImage } from 'electron'
 import { join } from 'node:path'
 import { existsSync } from 'node:fs'
 import { showOrRestorePreview, quitApp } from './window-manager'
+import { createConsoleWindow } from './console-window'
 
 // 系统托盘（设计文档 6.5）
 let tray: Tray | null = null
@@ -22,6 +23,7 @@ export function createTray(): Tray {
   tray.setContextMenu(
     Menu.buildFromTemplate([
       { label: '显示桌面', click: () => showOrRestorePreview() },
+      { label: '打开主控台', click: () => createConsoleWindow() },
       { type: 'separator' },
       { label: '退出', click: () => quitApp() }
     ])

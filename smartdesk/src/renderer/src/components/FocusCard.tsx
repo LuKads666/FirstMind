@@ -21,7 +21,9 @@ function FocusCard({ taskLabel = mockFocusLabel }: FocusCardProps): React.JSX.El
   const [live, setLive] = useState<{ current_activity: string; focus_minutes: number } | null>(
     null
   )
+  const [linkedLabel, setLinkedLabel] = useState<string | null>(null)
   const timerRef = useRef<number | null>(null)
+  const sessionIdRef = useRef<number | null>(null)
 
   // 真实专注状态（采集器会话）
   useEffect(() => {
@@ -36,6 +38,50 @@ function FocusCard({ taskLabel = mockFocusLabel }: FocusCardProps): React.JSX.El
     return () => window.clearInterval(timer)
   }, [])
 
+  // 启动时恢复进行中的专注会话
+  useEffect(() => {
+    void window.desktop
+      .focusActive()
+      .then((active) => {
+        if (active) sessionIdRef.current = active.id
+      })
+      .catch(() => {})
+  }, [])
+
+  // 提醒「开始任务」联动：主进程已建会话，这里同步计时状态
+  useEffect(() => {
+    const off = window.desktop.onFocusStarted(() => {
+      void window.desktop
+        .focusActive()
+        .then((active) => {
+          if (active) {
+            sessionIdRef.current = active.id
+            setLinkedLabel('提醒联动任务')
+            setRemaining(totalSeconds)
+            setPhase('running')
+          }
+        })
+        .catch(() => {})
+    })
+    return off
+  }, [totalSeconds])
+
+  const beginSession = (): void => {
+    if (sessionIdRef.current !== null) return
+    void window.desktop
+      .focusStart(null)
+      .then((s) => {
+        sessionIdRef.current = s.id
+      })
+      .catch(() => {})
+  }
+
+  const endSession = (completed: boolean): void => {
+    if (sessionIdRef.current === null) return
+    void window.desktop.focusStop(sessionIdRef.current, completed).catch(() => {})
+    sessionIdRef.current = null
+  }
+
   useEffect(() => {
     if (phase !== 'running') return
 
@@ -44,6 +90,7 @@ function FocusCard({ taskLabel = mockFocusLabel }: FocusCardProps): React.JSX.El
         if (current <= 1) {
           setPhase('done')
           setRounds((value) => value + 1)
+          endSession(true)
           return 0
         }
         return current - 1
@@ -64,17 +111,21 @@ function FocusCard({ taskLabel = mockFocusLabel }: FocusCardProps): React.JSX.El
   const toggle = (): void => {
     if (phase === 'running') {
       setPhase('paused')
+      endSession(false)
     } else if (phase === 'done') {
       setRemaining(totalSeconds)
       setPhase('running')
+      beginSession()
     } else {
       setPhase('running')
+      beginSession()
     }
   }
 
   const reset = (): void => {
     setRemaining(totalSeconds)
     setPhase('idle')
+    endSession(false)
   }
 
   return (
@@ -83,9 +134,11 @@ function FocusCard({ taskLabel = mockFocusLabel }: FocusCardProps): React.JSX.El
         <span className={`state-dot state-${phase}`} />
         <span>{statusText}</span>
         <span className="focus-context">
-          {live && live.focus_minutes > 0
-            ? `${activityLabel(live.current_activity)} · ${live.focus_minutes} 分钟`
-            : taskLabel}
+          {linkedLabel
+            ? `${linkedLabel} · 剩余 ${Math.ceil(remaining / 60)} 分钟`
+            : live && live.focus_minutes > 0
+              ? `${activityLabel(live.current_activity)} · ${live.focus_minutes} 分钟`
+              : taskLabel}
         </span>
       </div>
       <div className="focus-time">{formatTime(remaining)}</div>
