@@ -2,6 +2,8 @@ import { activeWindow } from "get-windows";
 import koffi from "koffi";
 import Database from "better-sqlite3";
 import { randomUUID } from "node:crypto";
+import chokidar from "chokidar";
+import path from "node:path";
 
 const db = new Database("campus.db");
 
@@ -86,6 +88,61 @@ const insertSession = db.prepare(`
     )
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 `);
+
+db.exec(`
+    CREATE TABLE IF NOT EXISTS file_events (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        participant_id TEXT NOT NULL,
+        event_time TEXT NOT NULL,
+        event_type TEXT NOT NULL,
+        file_name TEXT NOT NULL,
+        extension TEXT
+    )
+`);
+
+const insertFileEvent = db.prepare(`
+    INSERT INTO file_events (
+        participant_id,
+        event_time,
+        event_type,
+        file_name,
+        extension
+    )
+    VALUES (?, ?, ?, ?, ?)
+`);
+
+function saveFileEvent(eventType, filePath) {
+    const fileName = path.basename(filePath);
+    const extension = path.extname(filePath);
+
+    insertFileEvent.run(
+        participantId,
+        formatDateTime(Date.now()),
+        eventType,
+        fileName,
+        extension
+    );
+}
+
+db.exec(`
+    CREATE TABLE IF NOT EXISTS watch_paths (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        path TEXT NOT NULL UNIQUE
+    )
+`);
+
+const watchPathRows = db
+    .prepare(`
+        SELECT path
+        FROM watch_paths
+    `)
+    .all();
+
+const watchPaths = watchPathRows.map(
+    row => row.path
+);
+
+console.log("监听目录：", watchPaths);
 
 const user32 = koffi.load("user32.dll");
 const kernel32 = koffi.load("kernel32.dll");
@@ -224,6 +281,22 @@ function finishSession() {
 
     sessionStartTime = null;
 }
+
+const watcher = chokidar.watch(watchPaths, {
+    ignoreInitial: true
+});
+
+watcher.on("add", filePath => {
+    saveFileEvent("add", filePath);
+});
+
+watcher.on("change", filePath => {
+    saveFileEvent("change", filePath);
+});
+
+watcher.on("unlink", filePath => {
+    saveFileEvent("unlink", filePath);
+});
 
 async function collectBehavior() {
     const window = await activeWindow();
