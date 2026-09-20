@@ -1,11 +1,81 @@
 import { activeWindow } from "get-windows";
 import koffi from "koffi";
 import Database from "better-sqlite3";
+import { randomUUID } from "node:crypto";
 
 const db = new Database("campus.db");
 
+db.exec(`
+    CREATE TABLE IF NOT EXISTS app_meta (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL
+    )
+`);
+
+let participantRow = db
+    .prepare(`
+        SELECT value
+        FROM app_meta
+        WHERE key = ?
+    `)
+    .get("participant_id");
+
+    let participantId;
+
+if (participantRow) {
+    participantId = participantRow.value;
+} else {
+    participantId = randomUUID();
+
+     db.prepare(`
+        INSERT INTO app_meta (key, value)
+        VALUES (?, ?)
+    `).run(
+        "participant_id",
+        participantId
+    );
+}
+
+db.exec(`
+    CREATE TABLE IF NOT EXISTS app_sessions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        participant_id TEXT NOT NULL,
+        started_at TEXT NOT NULL,
+        ended_at TEXT NOT NULL,
+        app_name TEXT NOT NULL,
+        window_title TEXT,
+        duration_seconds REAL NOT NULL,
+        activity_ratio REAL,
+        max_idle_seconds REAL
+    )
+`);
+
+const sessionColumns = db
+    .prepare(`
+        PRAGMA table_info(app_sessions)
+    `)
+    .all();
+
+const hasParticipantId = sessionColumns.some(
+    column => column.name === "participant_id"
+);
+
+if (!hasParticipantId) {
+    db.exec(`
+        ALTER TABLE app_sessions
+        ADD COLUMN participant_id TEXT
+    `);
+}
+
+db.prepare(`
+    UPDATE app_sessions
+    SET participant_id = ?
+    WHERE participant_id IS NULL
+`).run(participantId);
+
 const insertSession = db.prepare(`
     INSERT INTO app_sessions (
+        participant_id,
         started_at,
         ended_at,
         app_name,
@@ -14,7 +84,7 @@ const insertSession = db.prepare(`
         activity_ratio,
         max_idle_seconds
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 `);
 
 const user32 = koffi.load("user32.dll");
@@ -123,14 +193,15 @@ function finishSession() {
             : 0;
 
     insertSession.run(
-        formatDateTime(sessionStartTime),
-        formatDateTime(endTime),
-        sessionApp,
-        sessionTitle,
-        durationSeconds,
-        activityRatio,
-        maxIdleSeconds
-    );
+    participantId,
+    formatDateTime(sessionStartTime),
+    formatDateTime(endTime),
+    sessionApp,
+    sessionTitle,
+    durationSeconds,
+    activityRatio,
+    maxIdleSeconds
+);
 
     console.log("Session 已保存：");
     console.log("软件：", sessionApp);
@@ -204,3 +275,4 @@ finishSession();
 collectBehavior();
 
 setInterval(collectBehavior, 500);
+console.log("participantId:", participantId);
