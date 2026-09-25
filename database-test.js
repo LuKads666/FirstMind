@@ -2,13 +2,31 @@ import Database from "better-sqlite3";
 
 const db = new Database("campus.db");
 
-const events = db
+
+const windows = db
     .prepare(`
-        SELECT id, participant_id, event_time, event_type, file_name, extension
-        FROM file_events
-        ORDER BY id DESC
-        LIMIT 20
+        SELECT *
+        FROM behavior_windows
+        ORDER BY window_start_ms DESC
+        LIMIT 10
     `)
     .all();
 
-console.log(events);
+
+const gaps = db
+    .prepare(`
+        SELECT *
+        FROM behavior_gaps
+        ORDER BY gap_start_ms DESC
+        LIMIT 10
+    `)
+    .all();
+
+
+console.log("正常行为窗口：");
+console.log(windows);
+
+console.log("====================");
+
+console.log("连续空白区间：");
+console.log(gaps);

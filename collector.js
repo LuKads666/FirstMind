@@ -48,7 +48,9 @@ db.exec(`
         window_title TEXT,
         duration_seconds REAL NOT NULL,
         activity_ratio REAL,
-        max_idle_seconds REAL
+        max_idle_seconds REAL,
+        started_at_ms INTEGER NOT NULL,
+        ended_at_ms INTEGER NOT NULL
     )
 `);
 
@@ -75,18 +77,42 @@ db.prepare(`
     WHERE participant_id IS NULL
 `).run(participantId);
 
+const hasStartedAtMs = sessionColumns.some(
+    column => column.name === "started_at_ms"
+);
+
+if (!hasStartedAtMs) {
+    db.exec(`
+        ALTER TABLE app_sessions
+        ADD COLUMN started_at_ms INTEGER
+    `);
+}
+
+const hasEndedAtMs = sessionColumns.some(
+    column => column.name === "ended_at_ms"
+);
+
+if (!hasEndedAtMs) {
+    db.exec(`
+        ALTER TABLE app_sessions
+        ADD COLUMN ended_at_ms INTEGER
+    `);
+}
+
 const insertSession = db.prepare(`
     INSERT INTO app_sessions (
         participant_id,
         started_at,
         ended_at,
+        started_at_ms,
+        ended_at_ms,
         app_name,
         window_title,
         duration_seconds,
         activity_ratio,
         max_idle_seconds
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `);
 
 db.exec(`
@@ -94,30 +120,52 @@ db.exec(`
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         participant_id TEXT NOT NULL,
         event_time TEXT NOT NULL,
+        event_time_ms INTEGER NOT NULL,
         event_type TEXT NOT NULL,
         file_name TEXT NOT NULL,
         extension TEXT
     )
 `);
 
+const fileEventColumns = db
+    .prepare(`
+        PRAGMA table_info(file_events)
+    `)
+    .all();
+
+const hasEventTimeMs = fileEventColumns.some(
+    column => column.name === "event_time_ms"
+);
+
+if (!hasEventTimeMs) {
+    db.exec(`
+        ALTER TABLE file_events
+        ADD COLUMN event_time_ms INTEGER
+    `);
+}
+
 const insertFileEvent = db.prepare(`
     INSERT INTO file_events (
         participant_id,
         event_time,
+        event_time_ms,
         event_type,
         file_name,
         extension
     )
-    VALUES (?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?)
 `);
 
 function saveFileEvent(eventType, filePath) {
     const fileName = path.basename(filePath);
     const extension = path.extname(filePath);
 
+    const eventTimeMs = Date.now();
+
     insertFileEvent.run(
         participantId,
-        formatDateTime(Date.now()),
+        formatDateTime(eventTimeMs),
+        eventTimeMs,
         eventType,
         fileName,
         extension
@@ -253,6 +301,8 @@ function finishSession() {
     participantId,
     formatDateTime(sessionStartTime),
     formatDateTime(endTime),
+    sessionStartTime,
+    endTime,
     sessionApp,
     sessionTitle,
     durationSeconds,
@@ -347,5 +397,64 @@ finishSession();
 
 collectBehavior();
 
-setInterval(collectBehavior, 500);
-console.log("participantId:", participantId);
+const collectionTimer =
+    setInterval(
+        collectBehavior,
+        500
+    );
+
+console.log(
+    "participantId:",
+    participantId
+);
+
+
+// 按 Ctrl+C 时执行
+process.on(
+    "SIGINT",
+    async () => {
+
+        console.log(
+            "\n正在结束采集..."
+        );
+
+        // 停止继续采集
+        clearInterval(
+            collectionTimer
+        );
+
+
+        // 把最后一次采样到现在的状态也统计进去
+        const idleSeconds =
+            getIdleSeconds();
+
+        if (
+            sessionStartTime !== null &&
+            idleSeconds !== null
+        ) {
+            updateSessionStats(
+                idleSeconds
+            );
+        }
+
+
+        // 保存当前还没有结束的 Session
+        finishSession();
+
+
+        // 停止文件监听
+        await watcher.close();
+
+
+        // 关闭数据库
+        db.close();
+
+
+        console.log(
+            "当前 Session 已保存，采集程序已安全退出。"
+        );
+
+
+        process.exit(0);
+    }
+);
