@@ -11,10 +11,11 @@ import {
 import { createTask, deleteTask, listTasks, updateTask } from '../storage/tasks-repo'
 import { getDatabase } from '../storage/database'
 import { getForegroundInfo } from '../collectors/foreground'
-import { getCollectorState } from '../collectors/runtime'
+import { getCollectorState, resetActivityResolutionState } from '../collectors/runtime'
 import { getCurrentFocusMinutes, getTodayStats } from '../storage/stats-repo'
 import { listEventsBetween, todayRange } from '../storage/calendar-repo'
 import { getAgentStatus } from '../agent/ollama-client'
+import { getDistractionProb } from '../model/predictor'
 import { getSetting, setSetting } from '../storage/settings-repo'
 import { localIso } from '../utils/time'
 import { evaluateOnce, triggerDemoRisk } from '../engine/scheduler'
@@ -198,6 +199,8 @@ export function registerIpcHandlers(): void {
     const tables = [
       'app_sessions',
       'activity_ticks',
+      'activity_resolution_cache',
+      'activity_learned_rules',
       'file_events',
       'focus_sessions',
       'risk_events',
@@ -208,6 +211,7 @@ export function registerIpcHandlers(): void {
       'user_feedback'
     ]
     for (const t of tables) db.prepare(`DELETE FROM ${t}`).run()
+    resetActivityResolutionState()
     return true
   })
 
@@ -256,7 +260,7 @@ function buildStatusSnapshot(): StatusSnapshot {
   return {
     current_activity: state.currentCategory,
     focus_minutes,
-    distraction_prob: null,
+    distraction_prob: getDistractionProb(),
     today_tasks: { done: counts.done ?? 0, total: counts.total },
     next_deadline: nextDeadline
       ? {

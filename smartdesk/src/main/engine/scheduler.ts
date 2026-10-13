@@ -34,7 +34,7 @@ interface ProfileData {
 }
 
 export async function evaluateOnce(now = new Date()): Promise<RiskCandidate[]> {
-  refreshPrediction()
+  await refreshPrediction()
   const ctx = buildContext(now)
   const candidates = evaluateRisks(ctx)
   const dispatched: RiskCandidate[] = []

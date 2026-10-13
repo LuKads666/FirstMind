@@ -37,6 +37,10 @@ describe('BehaviorCollector 会话聚合', () => {
     collector.sample(CODE, IDLE)
     collector.sample(CODE, ACTIVE)
 
+    const current = collector.getCurrentSession()
+    expect(current?.category).toBe('study_document')
+    expect(current?.activity_ratio).toBeCloseTo(3 / 4)
+
     expect(store.sessions).toHaveLength(0) // 未切换窗口前不落库
     collector.flush()
     expect(store.sessions).toHaveLength(1)

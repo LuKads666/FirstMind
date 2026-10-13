@@ -15,6 +15,22 @@ CREATE TABLE IF NOT EXISTS app_sessions (
 CREATE INDEX IF NOT EXISTS idx_app_sessions_started ON app_sessions (started_at);
 CREATE INDEX IF NOT EXISTS idx_app_sessions_category ON app_sessions (category);
 
+-- FirstMind activity resolver: exact title cache and app-scoped learned keywords
+CREATE TABLE IF NOT EXISTS activity_resolution_cache (
+  app_name     TEXT NOT NULL,
+  window_title TEXT NOT NULL,
+  category     TEXT NOT NULL,
+  source       TEXT NOT NULL,
+  PRIMARY KEY (app_name, window_title)
+);
+CREATE TABLE IF NOT EXISTS activity_learned_rules (
+  app_name   TEXT NOT NULL,
+  keyword    TEXT NOT NULL,
+  category   TEXT NOT NULL,
+  confidence REAL NOT NULL,
+  PRIMARY KEY (app_name, keyword)
+);
+
 -- 每分钟活跃度时间片
 CREATE TABLE IF NOT EXISTS activity_ticks (
   id            INTEGER PRIMARY KEY AUTOINCREMENT,

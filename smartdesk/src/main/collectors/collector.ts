@@ -72,7 +72,11 @@ export class BehaviorCollector {
     locked: boolean
   } | null = null
 
-  constructor(store: SessionStore, now: () => Date = () => new Date()) {
+  constructor(
+    store: SessionStore,
+    now: () => Date = () => new Date(),
+    private readonly classify: (processName: string, windowTitle: string) => AppCategory = mapCategory
+  ) {
     this.store = store
     this.now = now
   }
@@ -85,7 +89,7 @@ export class BehaviorCollector {
     this.advanceMinuteIfNeeded(now, activity)
 
     const locked = activity.is_locked
-    const category: AppCategory = locked ? 'away' : mapCategory(foreground?.process_name ?? '', foreground?.window_title ?? '')
+    const category: AppCategory = locked ? 'away' : this.classify(foreground?.process_name ?? '', foreground?.window_title ?? '')
 
     // 锁屏/无前台窗口：结束当前会话
     if (locked || !foreground) {
@@ -140,6 +144,20 @@ export class BehaviorCollector {
       currentCategory: this.current?.category ?? 'away',
       currentSessionStartedAt: this.current ? localIso(this.current.started_at) : null,
       lastSampleAt: null
+    }
+  }
+
+  getCurrentSession(now = this.now()): SessionRecord | null {
+    const c = this.current
+    if (!c) return null
+    return {
+      started_at: localIso(c.started_at),
+      ended_at: localIso(now),
+      app_name: c.process_name,
+      process_id: c.process_id,
+      window_title: c.window_title,
+      category: c.category,
+      activity_ratio: c.total_samples > 0 ? c.active_samples / c.total_samples : 0
     }
   }
 
